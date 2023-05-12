@@ -5,25 +5,33 @@ const refs = {
   stepEl: document.querySelector("input[name='step']"),
   amountEl: document.querySelector("input[name='amount']"),
 };
-
-let formDate = {};
+let formDate = {
+  [refs.delayEl.name]: Number([refs.delayEl.value]),
+  [refs.stepEl.name]: Number([refs.stepEl.value]),
+  [refs.amountEl.name]: Number([refs.amountEl.value]),
+};
 
 refs.formEl.addEventListener('submit', e => {
   e.preventDefault();
+  formDate = {
+    [refs.delayEl.name]: Number([refs.delayEl.value]),
+    [refs.stepEl.name]: Number([refs.stepEl.value]),
+    [refs.amountEl.name]: Number([refs.amountEl.value]),
+  };
+  renderPromise(formDate);
+});
 
-  formDate.delay = Number(refs.delayEl.value);
-  formDate.step = Number(refs.stepEl.value);
-  formDate.amount = Number(refs.amountEl.value);
+function renderPromise({ delay, step, amount }) {
+  let updatedDelay = delay;
 
-  for (let i = 1; i <= formDate.amount; i += 1) {
-    createPromise(i, formDate.delay)
+  for (let i = 1; i <= amount; i += 1) {
+    createPromise(i, updatedDelay)
       .then(result => Notify.success(result))
       .catch(error => Notify.failure(error));
 
-    formDate.delay += formDate.step;
+    updatedDelay += step;
   }
-});
-
+}
 function createPromise(position, delay) {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
