@@ -5,11 +5,7 @@ const refs = {
   stepEl: document.querySelector("input[name='step']"),
   amountEl: document.querySelector("input[name='amount']"),
 };
-let formDate = {
-  [refs.delayEl.name]: Number([refs.delayEl.value]),
-  [refs.stepEl.name]: Number([refs.stepEl.value]),
-  [refs.amountEl.name]: Number([refs.amountEl.value]),
-};
+let formDate = {};
 
 refs.formEl.addEventListener('submit', e => {
   e.preventDefault();
@@ -31,6 +27,7 @@ function renderPromise({ delay, step, amount }) {
 
     updatedDelay += step;
   }
+  clearingFormData(updatedDelay + step);
 }
 function createPromise(position, delay) {
   return new Promise((resolve, reject) => {
@@ -44,4 +41,12 @@ function createPromise(position, delay) {
       }
     }, delay);
   });
+}
+function clearingFormData(delay) {
+  setTimeout(() => {
+    refs.delayEl.value = '';
+    refs.stepEl.value = '';
+    refs.amountEl.value = '';
+    formDate = {};
+  }, delay);
 }
