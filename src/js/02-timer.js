@@ -5,12 +5,13 @@ import { Notify } from 'notiflix/build/notiflix-notify-aio';
 const refs = {
   timePickerEl: document.querySelector('input#datetime-picker'),
   startBtnEl: document.querySelector('button[data-start]'),
+  resetBtnEl: document.querySelector('button[data-reset]'),
   daysEl: document.querySelector('span[data-days]'),
   hoursEl: document.querySelector('span[data-hours]'),
   minutesEl: document.querySelector('span[data-minutes]'),
   secondsEl: document.querySelector('span[data-seconds]'),
 };
-
+let userTime = null;
 const optionsTimePicker = {
   enableTime: true,
   time_24hr: true,
@@ -18,7 +19,8 @@ const optionsTimePicker = {
   minuteIncrement: 1,
 
   onClose(selectedDates) {
-    if (selectedDates[0] < Date.now()) {
+    userTime = selectedDates[0];
+    if (userTime < Date.now()) {
       accessBtnStart(false);
       Notify.warning('Please choose a date in the future');
       return;
@@ -27,22 +29,36 @@ const optionsTimePicker = {
   },
 };
 
-const calendar = flatpickr(refs.timePickerEl, optionsTimePicker);
+flatpickr(refs.timePickerEl, optionsTimePicker);
 
-accessBtnStart(false);
+const timeLocalEl = document.querySelector("input[type='datetime-local']");
 let intervalId = null;
 
+refs.resetBtnEl.setAttribute('disabled', '');
+accessBtnStart(false);
+
 refs.startBtnEl.addEventListener('click', startInterval);
+refs.resetBtnEl.addEventListener('click', () => {
+  clearInterval(intervalId);
+  userTime = Date.now();
+  renderTimerElement();
+  timeLocalEl.removeAttribute('disabled');
+  refs.resetBtnEl.setAttribute('disabled', '');
+});
 
 function startInterval() {
-  if (calendar.selectedDates[0] < Date.now()) {
+  if (userTime < Date.now()) {
     accessBtnStart(false);
     Notify.warning('Please choose a date in the future');
     return;
   }
   accessBtnStart(false);
 
+  refs.resetBtnEl.removeAttribute('disabled');
+  timeLocalEl.setAttribute('disabled', '');
+
   intervalId = setInterval(() => {
+    renderAnimLastSeconds();
     renderTimerElement();
   }, 1000);
 }
@@ -55,21 +71,18 @@ function accessBtnStart(value) {
 }
 
 function renderTimerElement() {
-  const { days, hours, minutes, seconds } = convertMs(
-    calendar.selectedDates[0] - Date.now()
-  );
-  const checkTimeUpToMinutes = days === 0 && hours === 0 && minutes === 0;
+  const { days, hours, minutes, seconds } = convertMs(userTime - Date.now());
+  const checkTimeUpToMinutes =
+    days === 0 && hours === 0 && minutes === 0 && seconds === 0;
 
   refs.daysEl.textContent = addLeadingZero(days);
   refs.hoursEl.textContent = addLeadingZero(hours);
   refs.minutesEl.textContent = addLeadingZero(minutes);
   refs.secondsEl.textContent = addLeadingZero(seconds);
 
-  if (checkTimeUpToMinutes && seconds <= 10) {
-    animLastSeconds();
-  }
-
-  if (checkTimeUpToMinutes && seconds === 0) {
+  if (checkTimeUpToMinutes) {
+    timeLocalEl.removeAttribute('disabled');
+    refs.resetBtnEl.setAttribute('disabled', '');
     clearInterval(intervalId);
   }
 }
@@ -96,7 +109,14 @@ function convertMs(ms) {
 function addLeadingZero(value) {
   return String(value).padStart(2, '0');
 }
+function renderAnimLastSeconds() {
+  const { days, hours, minutes, seconds } = convertMs(userTime - Date.now());
+  const checkTimeUpToMinutes = days === 0 && hours === 0 && minutes === 0;
 
+  if (checkTimeUpToMinutes && seconds <= 10) {
+    animLastSeconds();
+  }
+}
 function animLastSeconds() {
   const anim = [{ color: 'inherit' }, { color: 'red' }];
   const timing = {
