@@ -5,21 +5,23 @@ const refs = {
   stepEl: document.querySelector("input[name='step']"),
   amountEl: document.querySelector("input[name='amount']"),
 };
+
 let formDate = {};
 
-refs.formEl.addEventListener('submit', e => {
-  e.preventDefault();
-  formDate = {
-    [refs.delayEl.name]: Number([refs.delayEl.value]),
-    [refs.stepEl.name]: Number([refs.stepEl.value]),
-    [refs.amountEl.name]: Number([refs.amountEl.value]),
-  };
-  renderPromise(formDate);
-});
+refs.formEl.addEventListener('input', savingEnteredData);
+refs.formEl.addEventListener('submit', renderPromise);
 
-function renderPromise({ delay, step, amount }) {
+function savingEnteredData(e) {
+  formDate[e.target.name] = Number(e.target.value);
+}
+function renderPromise(e) {
+  e.preventDefault();
+
+  const { delay, step, amount } = formDate;
   let updatedDelay = delay;
+
   if (delay < 0 || step < 0 || amount <= 0) {
+    checkingValues({ delay, step, amount });
     clearingFormData();
     return;
   }
@@ -32,6 +34,17 @@ function renderPromise({ delay, step, amount }) {
     updatedDelay += step;
   }
   clearingFormData(updatedDelay + step);
+}
+function checkingValues({ delay, step, amount }) {
+  if (delay < 0) {
+    Notify.warning('Delay must be greater than or equal to 0');
+  }
+  if (step < 0) {
+    Notify.warning('Step must be greater than or equal to 0');
+  }
+  if (amount <= 0) {
+    Notify.warning('Amount must be greater than 0');
+  }
 }
 function createPromise(position, delay) {
   return new Promise((resolve, reject) => {
