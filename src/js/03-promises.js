@@ -19,6 +19,10 @@ refs.formEl.addEventListener('submit', e => {
 
 function renderPromise({ delay, step, amount }) {
   let updatedDelay = delay;
+  if (delay < 0 || step < 0 || amount <= 0) {
+    clearingFormData();
+    return;
+  }
 
   for (let i = 1; i <= amount; i += 1) {
     createPromise(i, updatedDelay)
