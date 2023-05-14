@@ -12,6 +12,7 @@ const refs = {
   secondsEl: document.querySelector('span[data-seconds]'),
 };
 let userTime = null;
+
 const optionsTimePicker = {
   enableTime: true,
   time_24hr: true,
@@ -21,53 +22,61 @@ const optionsTimePicker = {
   onClose(selectedDates) {
     userTime = selectedDates[0];
     if (userTime < Date.now()) {
-      accessBtnStart(false);
+      accessRenderEl({ start: false });
       Notify.warning('Please choose a date in the future');
       return;
     }
-    accessBtnStart(true);
+    accessRenderEl({ start: true });
   },
 };
 
 flatpickr(refs.timePickerEl, optionsTimePicker);
-
-const timeLocalEl = document.querySelector("input[type='datetime-local']");
+accessRenderEl({ start: false, reset: false, input: true });
 let intervalId = null;
 
-refs.resetBtnEl.setAttribute('disabled', '');
-accessBtnStart(false);
-
 refs.startBtnEl.addEventListener('click', startInterval);
-refs.resetBtnEl.addEventListener('click', () => {
-  clearInterval(intervalId);
-  userTime = Date.now();
-  renderTimerElement();
-  timeLocalEl.removeAttribute('disabled');
-  refs.resetBtnEl.setAttribute('disabled', '');
-});
+refs.resetBtnEl.addEventListener('click', removeInterval);
+
+function accessRenderEl(args) {
+  const refsAccessEl = {
+    start: refs.startBtnEl,
+    reset: refs.resetBtnEl,
+    input: document.querySelector("input[type='datetime-local']")
+      ? document.querySelector("input[type='datetime-local']")
+      : refs.timePickerEl,
+  };
+  const arrArgsKeys = Object.keys(args);
+  const arrRefsAccessElKeys = Object.keys(refsAccessEl);
+
+  arrArgsKeys.map(iterator => {
+    if (arrRefsAccessElKeys.includes(iterator)) {
+      if (!args[iterator]) {
+        refsAccessEl[iterator].setAttribute('disabled', '');
+      } else refsAccessEl[iterator].removeAttribute('disabled');
+    }
+  });
+}
 
 function startInterval() {
   if (userTime < Date.now()) {
-    accessBtnStart(false);
+    accessRenderEl({ start: false });
     Notify.warning('Please choose a date in the future');
     return;
   }
-  accessBtnStart(false);
 
-  refs.resetBtnEl.removeAttribute('disabled');
-  timeLocalEl.setAttribute('disabled', '');
+  accessRenderEl({ start: false, reset: true, input: false });
 
   intervalId = setInterval(() => {
     renderAnimLastSeconds();
     renderTimerElement();
   }, 1000);
 }
-function accessBtnStart(value) {
-  if (!value) {
-    refs.startBtnEl.setAttribute('disabled', '');
-    return;
-  }
-  refs.startBtnEl.removeAttribute('disabled');
+
+function removeInterval() {
+  clearInterval(intervalId);
+  userTime = Date.now();
+  renderTimerElement();
+  accessRenderEl({ reset: false, input: true });
 }
 
 function renderTimerElement() {
@@ -81,8 +90,7 @@ function renderTimerElement() {
   refs.secondsEl.textContent = addLeadingZero(seconds);
 
   if (checkTimeUpToMinutes) {
-    timeLocalEl.removeAttribute('disabled');
-    refs.resetBtnEl.setAttribute('disabled', '');
+    accessRenderEl({ reset: false, input: true });
     clearInterval(intervalId);
   }
 }
@@ -109,6 +117,7 @@ function convertMs(ms) {
 function addLeadingZero(value) {
   return String(value).padStart(2, '0');
 }
+
 function renderAnimLastSeconds() {
   const { days, hours, minutes, seconds } = convertMs(userTime - Date.now());
   const checkTimeUpToMinutes = days === 0 && hours === 0 && minutes === 0;
@@ -117,6 +126,7 @@ function renderAnimLastSeconds() {
     animLastSeconds();
   }
 }
+
 function animLastSeconds() {
   const anim = [{ color: 'inherit' }, { color: 'red' }];
   const timing = {
